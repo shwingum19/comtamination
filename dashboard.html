@@ -2,57 +2,41 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Contamination – Dashboard</title>
+<title>Dashboard Contamination</title>
 <style>
-body { font-family: Arial; background:#111; color:#eee; padding:20px; text-align:center; }
-h1 { margin-bottom:30px; }
-.tag { display:inline-block; width:80px; height:40px; line-height:40px; text-align:center; margin:5px; border-radius:5px; font-weight:bold; color:#fff; }
-.sain { background-color:#28a745; }
-.contamine { background-color:#dc3545; }
-.zone { margin-bottom:20px; }
-.zone h2 { margin-bottom:10px; }
+#tagsContainer div {
+  padding: 20px;
+  margin: 10px;
+  border-radius: 10px;
+  color: #fff;
+  display: inline-block;
+}
 </style>
 </head>
 <body>
-<h1>Contamination – Dashboard</h1>
-
-<div class="zone">
-  <h2>Zone A</h2>
-  <div id="A-tags"></div>
-</div>
-<div class="zone">
-  <h2>Zone B</h2>
-  <div id="B-tags"></div>
-</div>
-<div class="zone">
-  <h2>Zone C</h2>
-  <div id="C-tags"></div>
-</div>
+<h1>Dashboard Contamination</h1>
+<div id="tagsContainer"></div>
 
 <script>
-const zones = ["A","B","C"];
-zones.forEach(zone => {
-  const container = document.getElementById(zone + "-tags");
-  for(let i=1;i<=12;i++){
-    const tagId = zone + String(i).padStart(2,"0");
+const binURL = "https://api.jsonbin.io/v3/b/6920c18ad0ea881f40f760fe";
+const apiKey = "$2a$10$FYbI.UBUR9uUn20mH5/nAesXEm4NPygH2n0HPRBlgSa8j/VmI8LD2";
+
+async function loadTags() {
+  const res = await fetch(binURL, { headers: { "X-Master-Key": apiKey } });
+  const data = await res.json();
+  const container = document.getElementById("tagsContainer");
+  container.innerHTML = "";
+
+  for (const [id, state] of Object.entries(data.record)) {
     const div = document.createElement("div");
-    const state = localStorage.getItem(tagId) || "sain";
-    div.className = "tag " + state;
-    div.textContent = tagId;
+    div.textContent = id;
+    div.style.backgroundColor = state === "sain" ? "#2ecc71" : "#e74c3c";
     container.appendChild(div);
   }
-});
+}
 
-// Met à jour toutes les 500ms pour voir les changements en temps réel
-setInterval(()=>{
-  zones.forEach(zone=>{
-    const container = document.getElementById(zone + "-tags");
-    for(let i=0;i<container.children.length;i++){
-      const tagId = zone + String(i+1).padStart(2,"0");
-      container.children[i].className = "tag " + (localStorage.getItem(tagId)||"sain");
-    }
-  });
-},500);
+loadTags();
+setInterval(loadTags, 5000); // actualisation toutes les 5 secondes
 </script>
 </body>
 </html>
