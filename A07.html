@@ -1,27 +1,66 @@
+
 <!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
 <title>Tag A07</title>
 <style>
-#tagBox {
-  width: 200px;
-  height: 200px;
+body {
+  margin: 0;
+  padding: 0;
+  background: #0c0c0c;
+  height: 100vh;
+}
+
+/* Wrapper qui assure un centrage parfait */
+#wrapper {
+  height: 100vh;
+  width: 100vw;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 2em;
-  color: #fff;
-  border-radius: 20px;
+}
+
+/* Bouton TAG */
+#tagBox {
+  width: 240px;
+  height: 240px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.6em;
+  border-radius: 22px;
+  color: white;
   cursor: pointer;
   user-select: none;
+  font-weight: 700;
+  border: 2px solid rgba(255,255,255,0.25);
+  box-shadow: 0 0 25px rgba(0,0,0,0.5);
+  transition: 0.25s;
+  letter-spacing: 2px;
 }
-.sain { background-color: #2ecc71; }
-.contamine { background-color: #e74c3c; }
+
+#tagBox:hover {
+  transform: scale(1.05);
+}
+
+.sain {
+  background: #27ae60;
+  box-shadow: 0 0 30px #2ecc71, 0 0 60px #2ecc71;
+}
+
+.contamine {
+  background: #c0392b;
+  box-shadow: 0 0 30px #e74c3c, 0 0 60px #e74c3c;
+}
 </style>
 </head>
 <body>
-<div id="tagBox">A07</div>
+
+<div id="wrapper">
+  <div id="tagBox">A07</div>
+</div>
+
 <script>
 const tagId = "A07";
 const binURL = "https://api.jsonbin.io/v3/b/6920c18ad0ea881f40f760fe";
@@ -43,7 +82,9 @@ async function setState(state) {
   const res = await fetch(binURL, { headers: { "X-Master-Key": apiKey }});
   const data = await res.json();
   const json = data.record;
+
   json[tagId] = state;
+
   await fetch(binURL, {
     method: "PUT",
     headers: {
@@ -53,16 +94,19 @@ async function setState(state) {
     },
     body: JSON.stringify(json)
   });
+
   setBox(state);
 }
 
 const box = document.getElementById("tagBox");
 box.addEventListener("click", () => {
-  const newState = box.className === "sain" ? "contamine" : "sain";
+  const current = box.className;
+  const newState = current === "sain" ? "contamine" : "sain";
   setState(newState);
 });
 
 loadState();
 </script>
+
 </body>
 </html>
