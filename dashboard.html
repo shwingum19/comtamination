@@ -2,125 +2,138 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>Dashboard Contamination</title>
+<title>Dashboard Contamination – V2</title>
+
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+
 body {
-  background: #080808;
-  color: #ffffff;
-  font-family: 'Arial', sans-serif;
+  background: #0a0018;
+  color: #e1d8ff;
+  font-family: 'Share Tech Mono', monospace;
   text-align: center;
   padding: 20px;
 }
 
-/* ——— TITRE ——— */
 h1 {
-  font-size: 2.4em;
-  margin-bottom: 30px;
-  letter-spacing: 3px;
+  font-size: 2em;
+  margin-bottom: 20px;
+  color: #c8b4ff;
+  text-shadow: 0 0 8px #7a5cff;
 }
 
-/* ——— ZONES ——— */
-.zone {
-  margin-bottom: 40px;
-}
-
-.zone h2 {
-  font-size: 1.8em;
-  margin-bottom: 15px;
-  color: #ddd;
-  letter-spacing: 2px;
-  font-weight: 600;
-}
-
-.zoneContainer {
+#tagsContainer {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
 }
 
-/* ——— TAGS ——— */
 .tagBox {
-  width: 110px;
-  height: 110px;
+  width: 150px;
+  padding: 12px;
   margin: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 0 10px #000;
+}
+
+.state-sain {
+  background: #2ecc71;
+  box-shadow: 0 0 10px #2ecc71;
+}
+
+.state-contamine {
+  background: #e74c3c;
+  box-shadow: 0 0 10px #e74c3c;
+}
+
+.state-bloque {
+  background: #3b0045;
+  box-shadow: 0 0 12px #7a00a8;
+}
+
+.tagId {
   font-size: 1.4em;
-  color: white;
-  border-radius: 14px;
-  background: rgba(255,255,255,0.08);
-  border: 1px solid rgba(255,255,255,0.15);
-  backdrop-filter: blur(4px);
-  transition: 0.25s;
+  margin-bottom: 8px;
+  color: #fff;
 }
 
-.sain {
-  box-shadow: 0 0 12px #2ecc71;
-}
-
-.contamine {
-  box-shadow: 0 0 12px #e74c3c;
+.smallInfo {
+  font-size: 0.8em;
+  margin-top: 4px;
+  opacity: 0.9;
 }
 </style>
 </head>
+
 <body>
 
-<h1>DASHBOARD CONTAMINATION</h1>
-
-<div id="zoneA" class="zone">
-  <h2>ZONE 1</h2>
-  <div class="zoneContainer" id="containerA"></div>
-</div>
-
-<div id="zoneB" class="zone">
-  <h2>ZONE 2</h2>
-  <div class="zoneContainer" id="containerB"></div>
-</div>
-
-<div id="zoneC" class="zone">
-  <h2>ZONE 3</h2>
-  <div class="zoneContainer" id="containerC"></div>
-</div>
+<h1>DASHBOARD – CONTAMINATION V2</h1>
+<div id="tagsContainer"></div>
 
 <script>
-const binURL = "https://api.jsonbin.io/v3/b/6920c18ad0ea881f40f760fe";
+const binURL = "https://api.jsonbin.io/v3/b/6922f02043b1c97be9bfcb3a/latest";
 const apiKey = "$2a$10$FYbI.UBUR9uUn20mH5/nAesXEm4NPygH2n0HPRBlgSa8j/VmI8LD2";
 
-function detectZone(id) {
-  if (id.startsWith("A")) return "A";
-  if (id.startsWith("B")) return "B";
-  if (id.startsWith("C")) return "C";
-  return null;
+const container = document.getElementById("tagsContainer");
+
+function msToMin(ms) {
+  return Math.floor(ms / 60000);
 }
 
-async function loadTags() {
+async function load() {
   try {
-    const res = await fetch(binURL, { headers: { "X-Master-Key": apiKey } });
+    const res = await fetch(binURL, {
+      headers: {
+        "X-Master-Key": apiKey,
+        "X-Bin-Meta": "false"
+      }
+    });
+
     const data = await res.json();
+    const record = data.record || data;
 
-    document.getElementById("containerA").innerHTML = "";
-    document.getElementById("containerB").innerHTML = "";
-    document.getElementById("containerC").innerHTML = "";
+    container.innerHTML = "";
 
-    for (const [id, state] of Object.entries(data.record)) {
+    for (const [id, info] of Object.entries(record)) {
+
+      let state = info.state;
+      let purifyCount = info.purifyCount;
+      let contaminatedSince = info.contaminatedSince;
+
+      // Vérification du blocage auto (>5 min)
+      if (state === "contamine" && contaminatedSince != null) {
+        let diff = Date.now() - contaminatedSince;
+        if (diff > 5 * 60000) {
+          state = "bloque";
+        }
+      }
+
       const div = document.createElement("div");
-      div.textContent = id;
-      div.className = `tagBox ${state}`;
+      div.className = "tagBox state-" + state;
 
-      const zone = detectZone(id);
-      if (zone === "A") document.getElementById("containerA").appendChild(div);
-      if (zone === "B") document.getElementById("containerB").appendChild(div);
-      if (zone === "C") document.getElementById("containerC").appendChild(div);
+      div.innerHTML = `
+        <div class="tagId">${id}</div>
+        <div>État : <b>${state.toUpperCase()}</b></div>
+        <div class="smallInfo">Purifications : ${purifyCount}/4</div>
+        ${
+          state === "contamine" && contaminatedSince
+          ? `<div class="smallInfo">Contaminé depuis : ${msToMin(Date.now() - contaminatedSince)} min</div>`
+          : ""
+        }
+      `;
+
+      container.appendChild(div);
     }
+
   } catch (err) {
-    console.error("Erreur fetch JSON :", err);
+    console.error("Erreur dashboard :", err);
   }
 }
 
-// Refresh auto
-loadTags();
-setInterval(loadTags, 3000);
+// actualisation toutes les 3 sec
+load();
+setInterval(load, 3000);
 </script>
 
 </body>
