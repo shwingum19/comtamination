@@ -73,48 +73,52 @@ body {
 
 <script>
 const tagId = "B08";
-const binURL = "https://api.jsonbin.io/v3/b/6922f02043b1c97be9bfcb3a";
+const binURL = "https://api.jsonbin.io/v3/b/6920c18ad0ea881f40f760fe";
 const apiKey = "$2a$10$FYbI.UBUR9uUn20mH5/nAesXEm4NPygH2n0HPRBlgSa8j/VmI8LD2";
 
+// éléments
 const box = document.getElementById("tagBox");
 const stateText = document.getElementById("stateText");
 const purifyInfo = document.getElementById("purifyInfo");
 
+// infos locales
 let info = {
   state: "sain",
   purifyCount: 0,
   contaminatedSince: null
 };
+
 let isBusy = false;
 const MAX_PURIFY = 4;
-const CONTAMINATION_LIMIT_MS = 5 * 60 * 1000; // 5 minutes
+const LIMIT_MS = 5 * 60 * 1000;
 
-function applyAutoBlock() {
+// applique auto-blocage
+function autoBlock() {
   if (info.state === "contamine" && info.contaminatedSince != null) {
-    const diff = Date.now() - info.contaminatedSince;
-    if (diff > CONTAMINATION_LIMIT_MS) {
+    if (Date.now() - info.contaminatedSince > LIMIT_MS) {
       info.state = "bloque";
     }
   }
 }
 
+// afficher
 function render() {
-  // nettoyer les classes
   box.classList.remove("sain", "contamine", "bloque");
   box.classList.add(info.state);
 
-  let label = "";
-  if (info.state === "sain") label = "SAIN";
-  else if (info.state === "contamine") label = "CONTAMINÉ";
-  else label = "BLOQUÉ";
+  const labels = {
+    sain: "SAIN",
+    contamine: "CONTAMINÉ",
+    bloque: "BLOQUÉ"
+  };
 
-  stateText.textContent = "ÉTAT : " + label;
-
-  const remaining = Math.max(0, MAX_PURIFY - (info.purifyCount || 0));
-  purifyInfo.textContent = "Purifications restantes : " + remaining + " / " + MAX_PURIFY;
+  stateText.textContent = "ÉTAT : " + labels[info.state];
+  purifyInfo.textContent =
+    "Purifications restantes : " + (MAX_PURIFY - info.purifyCount);
 }
 
-async function loadInfo() {
+// charger JSONBin
+async function load() {
   try {
     const res = await fetch(binURL + "/latest", {
       headers: {
@@ -122,39 +126,29 @@ async function loadInfo() {
         "X-Bin-Meta": "false"
       }
     });
+
     const data = await res.json();
     const record = data.record || data;
 
     if (!record[tagId]) {
-      info = {
-        state: "sain",
-        purifyCount: 0,
-        contaminatedSince: null
-      };
+      info = { state: "sain", purifyCount: 0, contaminatedSince: null };
     } else {
       info = record[tagId];
-      // sécurité: valeurs par défaut
-      if (!info.state) info.state = "sain";
-      if (typeof info.purifyCount !== "number") info.purifyCount = 0;
-      if (info.contaminatedSince === undefined) info.contaminatedSince = null;
     }
 
-    applyAutoBlock();
+    autoBlock();
     render();
   } catch (err) {
-    console.error("Erreur load JSONBin pour", tagId, err);
+    console.error("Erreur load :", err);
     stateText.textContent = "ERREUR";
-    purifyInfo.textContent = "";
   }
 }
 
-async function saveInfo() {
+// sauvegarder JSONBin
+async function save() {
   try {
     const res = await fetch(binURL + "/latest", {
-      headers: {
-        "X-Master-Key": apiKey,
-        "X-Bin-Meta": "false"
-      }
+      headers: { "X-Master-Key": apiKey, "X-Bin-Meta": "false" }
     });
     const data = await res.json();
     const record = data.record || data;
@@ -170,21 +164,22 @@ async function saveInfo() {
       },
       body: JSON.stringify(record)
     });
+
   } catch (err) {
-    console.error("Erreur save JSONBin pour", tagId, err);
+    console.error("Erreur save :", err);
   }
 }
 
-async function onClickTag() {
+// clic sur tag
+async function onClick() {
   if (isBusy) return;
   isBusy = true;
 
-  // d'abord recharger l'état pour éviter conflits
-  await loadInfo();
-  applyAutoBlock();
+  await load();
+
+  autoBlock();
 
   if (info.state === "bloque") {
-    // bloqué : rien ne se passe
     render();
     isBusy = false;
     return;
@@ -193,38 +188,37 @@ async function onClickTag() {
   const now = Date.now();
 
   if (info.state === "sain") {
-    // on CONTAMINE
+    // contaminer
     info.state = "contamine";
     info.contaminatedSince = now;
+
   } else if (info.state === "contamine") {
-    // on essaie de PURIFIER
-    // vérifier si blocage temps
-    if (info.contaminatedSince != null && now - info.contaminatedSince > CONTAMINATION_LIMIT_MS) {
+
+    if (info.contaminatedSince && now - info.contaminatedSince > LIMIT_MS) {
       info.state = "bloque";
+
+    } else if (info.purifyCount >= MAX_PURIFY) {
+      info.state = "bloque";
+
     } else {
-      // vérifier compteur de purif
-      if (info.purifyCount >= MAX_PURIFY) {
-        // plus de purifications : bloqué en contaminé
-        info.state = "bloque";
-      } else {
-        info.state = "sain";
-        info.purifyCount += 1;
-        info.contaminatedSince = null;
-      }
+      info.state = "sain";
+      info.purifyCount++;
+      info.contaminatedSince = null;
     }
   }
 
-  applyAutoBlock();
+  autoBlock();
   render();
-  await saveInfo();
+  await save();
 
   isBusy = false;
 }
 
-box.addEventListener("click", onClickTag);
+// événement clic
+box.addEventListener("click", onClick);
 
 // initial
-loadInfo();
+load();
 </script>
 
 </body>
