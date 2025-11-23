@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>RESET ADMIN – CONTAMINATION</title>
+
+<style>
+body {
+  background: #0a0018;
+  color: #dccfff;
+  font-family: Arial, sans-serif;
+  text-align: center;
+  padding-top: 60px;
+}
+
+h1 {
+  color: #ff77ff;
+  text-shadow: 0 0 12px #b400ff;
+}
+
+button {
+  margin-top: 40px;
+  padding: 15px 35px;
+  font-size: 1.4em;
+  background: #3d0054;
+  border: 2px solid #ff77ff;
+  color: white;
+  cursor: pointer;
+  border-radius: 10px;
+  transition: 0.3s;
+}
+
+button:hover {
+  background: #6b00a8;
+  box-shadow: 0 0 10px #ff77ff;
+}
+
+#status {
+  margin-top: 30px;
+  font-size: 1.3em;
+  color: #c9b6ff;
+}
+</style>
+</head>
+
+<body>
+
+<h1>RESET ADMIN</h1>
+<p>Réinitialise TOUTES les zones, purifications et états.</p>
+
+<button onclick="confirmReset()">RESET COMPLET</button>
+
+<div id="status"></div>
+
+<script>
+const binURL = "https://api.jsonbin.io/v3/b/6922f02043b1c97be9bfcb3a";
+const apiKey = "$2a$10$FYbI.UBUR9uUn20mH5/nAesXEm4NPygH2n0HPRBlgSa8j/VmI8LD2";
+
+function confirmReset(){
+    if (confirm("⚠️ Es-tu SÛRE de vouloir réinitialiser toute la partie ?\nCette action est irréversible.")){
+        resetAll();
+    }
+}
+
+async function resetAll() {
+  document.getElementById("status").textContent = "Reset en cours...";
+
+  // Liste EXACTE des tags que tu veux réinitialiser
+  const ids = [
+    "A01","A02","A03","A04","A05","A06","A07","A08","A09","A10","A11","A12",
+    "B01","B02","B03","B04","B05","B06","B07","B08","B09","B10","B11","B12",
+    "C01","C02","C03","C04","C05","C06","C07","C08","C09","C10","C11","C12"
+  ];
+
+  // Création du modèle initial
+  const resetObject = {};
+  ids.forEach(id => {
+      resetObject[id] = {
+        state: "sain",
+        purifyCount: 0,
+        contaminatedSince: null
+      };
+  });
+
+  try {
+    await fetch(binURL, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Master-Key": apiKey,
+        "X-Bin-Versioning": "false"
+      },
+      body: JSON.stringify(resetObject)
+    });
+
+    document.getElementById("status").textContent = "✔ Réinitialisation terminée !";
+  }
+  catch(err){
+    document.getElementById("status").textContent = "❌ Erreur : " + err;
+  }
+}
+</script>
+
+</body>
+</html>
