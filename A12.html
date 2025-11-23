@@ -1,111 +1,230 @@
-
 <!DOCTYPE html>
-<html>
+<html lang="fr">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Tag A12</title>
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+
 body {
   margin: 0;
-  padding: 0;
-  background: #0c0c0c;
   height: 100vh;
-}
-
-/* Wrapper qui assure un centrage parfait */
-#wrapper {
-  height: 100vh;
-  width: 100vw;
   display: flex;
-  align-items: center;
   justify-content: center;
+  align-items: center;
+  background: #050010;
+  font-family: 'Share Tech Mono', monospace;
 }
 
-/* Bouton TAG */
 #tagBox {
-  width: 240px;
-  height: 240px;
+  width: 220px;
+  height: 220px;
+  border-radius: 20px;
   display: flex;
-  align-items: center;
+  flex-direction: column;
   justify-content: center;
-  font-size: 2.6em;
-  border-radius: 22px;
-  color: white;
+  align-items: center;
+  color: #ffffff;
   cursor: pointer;
-  user-select: none;
-  font-weight: 700;
-  border: 2px solid rgba(255,255,255,0.25);
-  box-shadow: 0 0 25px rgba(0,0,0,0.5);
-  transition: 0.25s;
-  letter-spacing: 2px;
+  text-align: center;
+  box-shadow: 0 0 12px #000;
 }
 
-#tagBox:hover {
-  transform: scale(1.05);
+#tagId {
+  font-size: 2.4em;
+  margin-bottom: 10px;
 }
 
+#stateText {
+  font-size: 1em;
+  margin-bottom: 6px;
+}
+
+#purifyInfo {
+  font-size: 0.8em;
+  opacity: 0.9;
+}
+
+/* Couleurs d'état */
 .sain {
-  background: #27ae60;
-  box-shadow: 0 0 30px #2ecc71, 0 0 60px #2ecc71;
+  background: #2ecc71;
+  box-shadow: 0 0 15px #2ecc71;
 }
 
 .contamine {
-  background: #c0392b;
-  box-shadow: 0 0 30px #e74c3c, 0 0 60px #e74c3c;
+  background: #e74c3c;
+  box-shadow: 0 0 15px #e74c3c;
+}
+
+.bloque {
+  background: #3b0045;
+  box-shadow: 0 0 18px #7a00a8;
 }
 </style>
 </head>
 <body>
 
-<div id="wrapper">
-  <div id="tagBox">A12</div>
+<div id="tagBox">
+  <div id="tagId">A12</div>
+  <div id="stateText">Chargement...</div>
+  <div id="purifyInfo"></div>
 </div>
 
 <script>
 const tagId = "A12";
-const binURL = "https://api.jsonbin.io/v3/b/6920c18ad0ea881f40f760fe";
+const binURL = "https://api.jsonbin.io/v3/b/6922f02043b1c97be9bfcb3a";
 const apiKey = "$2a$10$FYbI.UBUR9uUn20mH5/nAesXEm4NPygH2n0HPRBlgSa8j/VmI8LD2";
 
-async function loadState() {
-  const res = await fetch(binURL, { headers: { "X-Master-Key": apiKey }});
-  const data = await res.json();
-  const state = data.record[tagId];
-  setBox(state);
-}
-
-function setBox(state) {
-  const box = document.getElementById("tagBox");
-  box.className = state;
-}
-
-async function setState(state) {
-  const res = await fetch(binURL, { headers: { "X-Master-Key": apiKey }});
-  const data = await res.json();
-  const json = data.record;
-
-  json[tagId] = state;
-
-  await fetch(binURL, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Master-Key": apiKey,
-      "X-Bin-Versioning": "false"
-    },
-    body: JSON.stringify(json)
-  });
-
-  setBox(state);
-}
-
 const box = document.getElementById("tagBox");
-box.addEventListener("click", () => {
-  const current = box.className;
-  const newState = current === "sain" ? "contamine" : "sain";
-  setState(newState);
-});
+const stateText = document.getElementById("stateText");
+const purifyInfo = document.getElementById("purifyInfo");
 
-loadState();
+let info = {
+  state: "sain",
+  purifyCount: 0,
+  contaminatedSince: null
+};
+let isBusy = false;
+const MAX_PURIFY = 4;
+const CONTAMINATION_LIMIT_MS = 5 * 60 * 1000; // 5 minutes
+
+function applyAutoBlock() {
+  if (info.state === "contamine" && info.contaminatedSince != null) {
+    const diff = Date.now() - info.contaminatedSince;
+    if (diff > CONTAMINATION_LIMIT_MS) {
+      info.state = "bloque";
+    }
+  }
+}
+
+function render() {
+  // nettoyer les classes
+  box.classList.remove("sain", "contamine", "bloque");
+  box.classList.add(info.state);
+
+  let label = "";
+  if (info.state === "sain") label = "SAIN";
+  else if (info.state === "contamine") label = "CONTAMINÉ";
+  else label = "BLOQUÉ";
+
+  stateText.textContent = "ÉTAT : " + label;
+
+  const remaining = Math.max(0, MAX_PURIFY - (info.purifyCount || 0));
+  purifyInfo.textContent = "Purifications restantes : " + remaining + " / " + MAX_PURIFY;
+}
+
+async function loadInfo() {
+  try {
+    const res = await fetch(binURL + "/latest", {
+      headers: {
+        "X-Master-Key": apiKey,
+        "X-Bin-Meta": "false"
+      }
+    });
+    const data = await res.json();
+    const record = data.record || data;
+
+    if (!record[tagId]) {
+      info = {
+        state: "sain",
+        purifyCount: 0,
+        contaminatedSince: null
+      };
+    } else {
+      info = record[tagId];
+      // sécurité: valeurs par défaut
+      if (!info.state) info.state = "sain";
+      if (typeof info.purifyCount !== "number") info.purifyCount = 0;
+      if (info.contaminatedSince === undefined) info.contaminatedSince = null;
+    }
+
+    applyAutoBlock();
+    render();
+  } catch (err) {
+    console.error("Erreur load JSONBin pour", tagId, err);
+    stateText.textContent = "ERREUR";
+    purifyInfo.textContent = "";
+  }
+}
+
+async function saveInfo() {
+  try {
+    const res = await fetch(binURL + "/latest", {
+      headers: {
+        "X-Master-Key": apiKey,
+        "X-Bin-Meta": "false"
+      }
+    });
+    const data = await res.json();
+    const record = data.record || data;
+
+    record[tagId] = info;
+
+    await fetch(binURL, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Master-Key": apiKey,
+        "X-Bin-Versioning": "false"
+      },
+      body: JSON.stringify(record)
+    });
+  } catch (err) {
+    console.error("Erreur save JSONBin pour", tagId, err);
+  }
+}
+
+async function onClickTag() {
+  if (isBusy) return;
+  isBusy = true;
+
+  // d'abord recharger l'état pour éviter conflits
+  await loadInfo();
+  applyAutoBlock();
+
+  if (info.state === "bloque") {
+    // bloqué : rien ne se passe
+    render();
+    isBusy = false;
+    return;
+  }
+
+  const now = Date.now();
+
+  if (info.state === "sain") {
+    // on CONTAMINE
+    info.state = "contamine";
+    info.contaminatedSince = now;
+  } else if (info.state === "contamine") {
+    // on essaie de PURIFIER
+    // vérifier si blocage temps
+    if (info.contaminatedSince != null && now - info.contaminatedSince > CONTAMINATION_LIMIT_MS) {
+      info.state = "bloque";
+    } else {
+      // vérifier compteur de purif
+      if (info.purifyCount >= MAX_PURIFY) {
+        // plus de purifications : bloqué en contaminé
+        info.state = "bloque";
+      } else {
+        info.state = "sain";
+        info.purifyCount += 1;
+        info.contaminatedSince = null;
+      }
+    }
+  }
+
+  applyAutoBlock();
+  render();
+  await saveInfo();
+
+  isBusy = false;
+}
+
+box.addEventListener("click", onClickTag);
+
+// initial
+loadInfo();
 </script>
 
 </body>
