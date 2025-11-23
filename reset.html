@@ -53,6 +53,7 @@ button:hover {
 <div id="status"></div>
 
 <script>
+// ⚠️ ICI : BON BIN CONTAMINATION
 const binURL = "https://api.jsonbin.io/v3/b/6920c18ad0ea881f40f760fe";
 const apiKey = "$2a$10$FYbI.UBUR9uUn20mH5/nAesXEm4NPygH2n0HPRBlgSa8j/VmI8LD2";
 
@@ -63,7 +64,8 @@ function confirmReset(){
 }
 
 async function resetAll() {
-  document.getElementById("status").textContent = "Reset en cours...";
+  const statusEl = document.getElementById("status");
+  statusEl.textContent = "Reset en cours...";
 
   const ids = [
     "A01","A02","A03","A04","A05","A06","A07","A08","A09","A10","A11","A12",
@@ -71,6 +73,7 @@ async function resetAll() {
     "C01","C02","C03","C04","C05","C06","C07","C08","C09","C10","C11","C12"
   ];
 
+  // On recrée entièrement l’objet propre
   const resetObject = {};
   ids.forEach(id => {
       resetObject[id] = {
@@ -91,14 +94,13 @@ async function resetAll() {
       body: JSON.stringify(resetObject)
     });
 
-    document.getElementById("status").textContent = "✔ Réinitialisation terminée !";
+    statusEl.textContent = "✔ Réinitialisation terminée !";
   }
   catch(err){
-    document.getElementById("status").textContent = "❌ Erreur : " + err;
+    statusEl.textContent = "❌ Erreur : " + err;
   }
 }
 </script>
 
 </body>
 </html>
-
