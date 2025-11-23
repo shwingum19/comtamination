@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>Dashboard Contamination – V2</title>
+<title>Dashboard Contamination – Zones</title>
 
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
@@ -11,21 +11,29 @@ body {
   background: #0a0018;
   color: #e1d8ff;
   font-family: 'Share Tech Mono', monospace;
-  text-align: center;
   padding: 20px;
 }
 
 h1 {
-  font-size: 2em;
-  margin-bottom: 20px;
+  text-align: center;
+  margin-bottom: 30px;
   color: #c8b4ff;
   text-shadow: 0 0 8px #7a5cff;
 }
 
-#tagsContainer {
+.zoneTitle {
+  font-size: 1.8em;
+  margin-top: 40px;
+  margin-bottom: 15px;
+  color: #ff9dff;
+  text-shadow: 0 0 6px #b400ff;
+}
+
+#tagsA, #tagsB, #tagsC {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
+  margin-bottom: 20px;
 }
 
 .tagBox {
@@ -68,14 +76,24 @@ h1 {
 
 <body>
 
-<h1>DASHBOARD – CONTAMINATION V2</h1>
-<div id="tagsContainer"></div>
+<h1>DASHBOARD – CONTAMINATION (Zones A / B / C)</h1>
+
+<div class="zoneTitle">ZONE A</div>
+<div id="tagsA"></div>
+
+<div class="zoneTitle">ZONE B</div>
+<div id="tagsB"></div>
+
+<div class="zoneTitle">ZONE C</div>
+<div id="tagsC"></div>
 
 <script>
 const binURL = "https://api.jsonbin.io/v3/b/6920c18ad0ea881f40f760fe/latest";
 const apiKey = "$2a$10$FYbI.UBUR9uUn20mH5/nAesXEm4NPygH2n0HPRBlgSa8j/VmI8LD2";
 
-const container = document.getElementById("tagsContainer");
+const contA = document.getElementById("tagsA");
+const contB = document.getElementById("tagsB");
+const contC = document.getElementById("tagsC");
 
 function msToMin(ms) {
   return Math.floor(ms / 60000);
@@ -84,16 +102,15 @@ function msToMin(ms) {
 async function load() {
   try {
     const res = await fetch(binURL, {
-      headers: {
-        "X-Master-Key": apiKey,
-        "X-Bin-Meta": "false"
-      }
+      headers: { "X-Master-Key": apiKey, "X-Bin-Meta": "false" }
     });
 
     const data = await res.json();
     const record = data.record || data;
 
-    container.innerHTML = "";
+    contA.innerHTML = "";
+    contB.innerHTML = "";
+    contC.innerHTML = "";
 
     for (const [id, info] of Object.entries(record)) {
 
@@ -101,7 +118,6 @@ async function load() {
       let purifyCount = info.purifyCount;
       let contaminatedSince = info.contaminatedSince;
 
-      // Vérification du blocage auto (>5 min)
       if (state === "contamine" && contaminatedSince != null) {
         let diff = Date.now() - contaminatedSince;
         if (diff > 5 * 60000) {
@@ -123,7 +139,9 @@ async function load() {
         }
       `;
 
-      container.appendChild(div);
+      if (id.startsWith("A")) contA.appendChild(div);
+      else if (id.startsWith("B")) contB.appendChild(div);
+      else if (id.startsWith("C")) contC.appendChild(div);
     }
 
   } catch (err) {
@@ -131,11 +149,9 @@ async function load() {
   }
 }
 
-// actualisation toutes les 3 sec
 load();
 setInterval(load, 3000);
 </script>
 
 </body>
 </html>
-
