@@ -1,22 +1,63 @@
 <!DOCTYPE html>
-<html>
+<html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <title>Contamination – Accueil</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Menu – Contamination System</title>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+
+body {
+  margin: 0;
+  padding: 0;
+  background: #0a0018;
+  color: #e2d6ff;
+  font-family: 'Share Tech Mono', monospace;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  text-align: center;
+}
+
+h1 {
+  font-size: 1.8em;
+  margin-bottom: 40px;
+  color: #d1b6ff;
+  text-shadow: 0 0 12px #8b5cff;
+}
+
+.menu-btn {
+  display: block;
+  width: 240px;
+  padding: 15px;
+  margin: 12px 0;
+  font-size: 1.2em;
+  background: #2b0050;
+  color: #fff;
+  border: 2px solid #a256ff;
+  border-radius: 10px;
+  text-decoration: none;
+  transition: 0.25s;
+  box-shadow: 0 0 8px #000;
+}
+
+.menu-btn:hover {
+  background: #4b0090;
+  box-shadow: 0 0 12px #c37dff;
+  transform: scale(1.05);
+}
+</style>
 </head>
+
 <body>
-  <h1>Contamination – Accueil</h1>
-  <p>Choisis une page :</p>
 
-  <ul>
-    <a href="dashboard.html">Contamination – Dashboard</a>
-    <li><a href="A01.html">Tag A01</a></li>
-    <li><a href="A02.html">Tag A02</a></li>
-    <li><a href="A03.html">Tag A03</a></li>
-    <li>… (tu peux ajouter les autres plus tard si tu veux)</li>
-  </ul>
+<h1>CONTAMINATION SYSTEM<br>MAIN MENU</h1>
 
-  <p>Ou scanne un tag pour y accéder directement.</p>
+<a class="menu-btn" href="dashboard.html">📊 Dashboard</a>
+<a class="menu-btn" href="reset.html">🧨 Reset Admin</a>
+
 </body>
 </html>
-
